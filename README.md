@@ -1,4 +1,5 @@
-# Yaxin Hou, Yuheng Jia, A Square Peg in a Square Hole: Meta-Expert for Long-Tailed Semi-Supervised Learning, International Conference on Machine Learning, 13th-19th July, Vancouver, 2025.
+# A Square Peg in a Square Hole: Meta-Expert for Long-Tailed Semi-Supervised Learning
+Yaxin Hou, Yuheng Jia, A Square Peg in a Square Hole: Meta-Expert for Long-Tailed Semi-Supervised Learning, International Conference on Machine Learning, 13th-19th July, Vancouver, 2025.
 This is an official [PyTorch](http://pytorch.org) implementation for **A Square Peg in a Square Hole: Meta-Expert for Long-Tailed Semi-Supervised Learning**.
 
 ## Introduction
