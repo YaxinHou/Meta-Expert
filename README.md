@@ -11,9 +11,9 @@ Also, I've made corresponding modifications to `semilearn/nets/` and several `__
 ## How to run
 For example, on CIFAR-10-LT with $\gamma_l=\gamma_u=150$
 
-`
+```
 CUDA_VISIBLE_DEVICES=0 python train.py --c config/002-fixmatch_metaexpert_cifar10_lb1500_150_ulb3000_150_0.0_2.yaml
-`
+```
 
 (Note: I know that USB supports multi-GPUs, but I still recommend you to run on single GPU, as some weird problems may occur.)
 
