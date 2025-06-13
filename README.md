@@ -39,7 +39,7 @@ If you find our method useful, please consider citing our paper:
   ```
   @inproceedings{metaexperticml2025,
     title={A Square Peg in a Square Hole: Meta-Expert for Long-Tailed Semi-Supervised Learning},
-    author={Jia, Yuheng and Hou, Yaxin},
+    author={Hou, Yaxin and Jia, Yuheng},
     booktitle={International Conference on Machine Learning},
     volume={},
     number={},
