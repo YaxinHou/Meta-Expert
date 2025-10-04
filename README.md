@@ -42,7 +42,6 @@ If you find our method useful, please consider citing our paper:
     author={Hou, Yaxin and Jia, Yuheng},
     booktitle={International Conference on Machine Learning},
     volume={},
-    number={},
     pages={},
     year={2025}
   }
