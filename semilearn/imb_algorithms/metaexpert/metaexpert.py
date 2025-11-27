@@ -4,13 +4,11 @@
 import torch
 import numpy as np
 import torch.nn as nn
+import torch.nn.functional as F
 from semilearn.core import ImbAlgorithmBase
 from semilearn.core.utils import IMB_ALGORITHMS
-from semilearn.algorithms.hooks import PseudoLabelingHook, FixedThresholdingHook
 from semilearn.algorithms.utils import SSL_Argument, str2bool
-from sklearn.metrics import precision_score, recall_score
-from collections import Counter
-import torch.nn.functional as F
+from semilearn.algorithms.hooks import PseudoLabelingHook, FixedThresholdingHook
 from sklearn.metrics import accuracy_score, balanced_accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, top_k_accuracy_score
 
 class MetaExpertNet(nn.Module):
@@ -18,9 +16,9 @@ class MetaExpertNet(nn.Module):
         super().__init__()
         self.cut1 = cut1
         self.cut2 = cut2
-        
+
         self.hat = p_hat_lb
-        
+
         self.backbone = backbone
         self.channels = backbone.channels
 
@@ -38,14 +36,14 @@ class MetaExpertNet(nn.Module):
         self.lin6 = nn.Sequential(nn.Linear(self.channels[2], self.channels[3]), nn.SiLU())
         self.lin7 = nn.Sequential(nn.Linear(self.channels[3], 2 * self.channels[3]), nn.SiLU())
         self.lin8 = nn.Sequential(nn.Linear(2 * self.channels[3], 2 * self.channels[3]), nn.SiLU())
-        
+
         # ensemble head
         self.predict = nn.Sequential(nn.Linear(2 * self.channels[3] + 3 * num_classes, 128), nn.SiLU(),
                                      nn.Linear(128, 64), nn.SiLU(),
                                      nn.Linear(64, 3), nn.SiLU()
                                      )
         self.fuse_softmax = nn.Softmax(dim=1)
-        
+
     def forward(self, x, **kwargs):
         results_dict = self.backbone(x, **kwargs)
 
@@ -57,11 +55,11 @@ class MetaExpertNet(nn.Module):
         c_logit_1 = results_dict['logits']
         c_logit_2 = results_dict['aux_logits1']
         c_logit_3 = results_dict['aux_logits2']
-        
+
         cp_logit_1 = self.fuse_softmax(c_logit_1)
         cp_logit_2 = self.fuse_softmax(c_logit_2)
         cp_logit_3 = self.fuse_softmax(c_logit_3)
-        
+
         c_logit_x_H_1 = results_dict['logitsH']
         c_logit_x_M_1 = results_dict['logitsM']
         c_logit_x_T_1 = results_dict['logitsT']
@@ -71,7 +69,7 @@ class MetaExpertNet(nn.Module):
         c_logit_x_H_3 = results_dict['aux_logitsH2']
         c_logit_x_M_3 = results_dict['aux_logitsM2']
         c_logit_x_T_3 = results_dict['aux_logitsT2']
-        
+
         min_c_logit_x_H_1 = torch.min(c_logit_x_H_1, dim=1, keepdim=True).values
         min_c_logit_x_M_1 = torch.min(c_logit_x_M_1, dim=1, keepdim=True).values
         min_c_logit_x_T_1 = torch.min(c_logit_x_T_1, dim=1, keepdim=True).values
@@ -95,7 +93,7 @@ class MetaExpertNet(nn.Module):
         l_logit_1 = c_logit_1 + self.tau1 * torch.log(self.hat)
         l_logit_2 = c_logit_2 + self.tau2 * torch.log(self.hat)
         l_logit_3 = c_logit_3 + self.tau3 * torch.log(self.hat)
-        
+
         lp_logit_1 = self.fuse_softmax(l_logit_1)
         lp_logit_2 = self.fuse_softmax(l_logit_2)
         lp_logit_3 = self.fuse_softmax(l_logit_3)
@@ -112,12 +110,12 @@ class MetaExpertNet(nn.Module):
         feat22 = self.lin2(feat2 + feat11)
         feat33 = self.lin3(feat3 + feat22)
         feat44 = self.lin4(feat4 + feat33)
-        
+
         feat111 = self.lin5(feat11)
         feat222 = self.lin6(feat22 + feat111)
         feat333 = self.lin7(feat33 + feat222)
         feat444 = self.lin8(feat44 + feat333)
-        
+
         fuse_out = torch.cat([feat444, lp_logit_1, lp_logit_2, lp_logit_3], dim=1)
         out_for_attention = self.predict(fuse_out)
 
@@ -150,10 +148,10 @@ class MetaExpert(ImbAlgorithmBase):
         super(MetaExpert, self).__init__(args, net_builder, tb_log, logger)
 
         self.head = 3
-        
+
         self.cut1 = args.cut1
         self.cut2 = args.cut2
-        
+
         self.beta1 = args.beta1
         self.beta2 = args.beta2
 
@@ -180,24 +178,24 @@ class MetaExpert(ImbAlgorithmBase):
                     head_lb_class_dist[2] += 1
         lb_class_dist = np.array(lb_class_dist)
         head_lb_class_dist = np.array(head_lb_class_dist)
-        
+
         self.p_hat_lb = torch.from_numpy((lb_class_dist / lb_class_dist.sum()).astype(np.float32)).cuda(args.gpu)
         self.head_p_hat_lb = torch.from_numpy((head_lb_class_dist / head_lb_class_dist.sum()).astype(np.float32)).cuda(args.gpu)
-        
+
         self.class_dist_con = torch.from_numpy((lb_class_dist / lb_class_dist.sum()).astype(np.float32)).cuda(args.gpu)
         self.class_dist_uni = (torch.ones(self.num_classes) / self.num_classes).cuda(args.gpu)
         self.class_dist_rev = torch.flip(self.class_dist_con, dims=[0]).cuda(args.gpu)
-        
+
         self.current_mask = torch.zeros(self.num_classes).cuda(self.args.gpu)
         self.est_class_dist = (torch.ones(self.num_classes) / self.num_classes).cuda(args.gpu)
-        
+
         self.current_est_step = 0
-        
+
         self.count_kl = torch.zeros(self.head).cuda(args.gpu)
         self.weight_kl = (torch.ones(self.head) / self.head).cuda(args.gpu)
-        
+
         self.kl_div = nn.KLDivLoss(reduction='sum')
-        
+
         self.weight1 = (1.0 - self.beta1) / (1.0 - np.power(self.beta1, lb_class_dist))
         self.weight1 = torch.from_numpy((self.weight1 / np.sum(self.weight1) * self.num_classes).astype(np.float32)).cuda(args.gpu)
 
@@ -207,15 +205,15 @@ class MetaExpert(ImbAlgorithmBase):
         self.tau_lb1 = args.la_tau_lb1
         self.tau_lb2 = args.la_tau_lb2
         self.tau_lb3 = args.la_tau_lb3
-        
+
         self.model = MetaExpertNet(self.model, num_classes=self.num_classes, p_hat_lb=self.p_hat_lb, tau_lb1=self.tau_lb1, tau_lb2=self.tau_lb2, tau_lb3=self.tau_lb3, cut1=self.cut1, cut2=self.cut2)
         self.ema_model = MetaExpertNet(self.ema_model, num_classes=self.num_classes, p_hat_lb=self.p_hat_lb, tau_lb1=self.tau_lb1, tau_lb2=self.tau_lb2, tau_lb3=self.tau_lb3, cut1=self.cut1, cut2=self.cut2)
         self.ema_model.load_state_dict(self.model.state_dict())
 
         self.est_epoch = args.est_epoch
-        
+
         self.current_epoch = args.est_epoch
-        
+
         self.est_step = args.num_eval_iter
 
         self.ema_u = args.ema_u
@@ -272,24 +270,24 @@ class MetaExpert(ImbAlgorithmBase):
                 _, logits_x_ulb_sH3 = outputs['aux_logitsH2'][num_lb:].chunk(2)
                 _, logits_x_ulb_sM3 = outputs['aux_logitsM2'][num_lb:].chunk(2)
                 _, logits_x_ulb_sT3 = outputs['aux_logitsT2'][num_lb:].chunk(2)
-                
+
                 fuse_l_logits_x_lb = outputs['fuse_logit_l'][:num_lb]
                 fuse_l_logits_x_ulb_w, fuse_l_logits_x_ulb_s = outputs['fuse_logit_l'][num_lb:].chunk(2)
-                
+
                 fuse_c_logits_HMT_x_lb_1 = outputs['fuse_logit_HMT_c_1'][:num_lb]
                 fuse_c_logits_HMT_x_ulb_w_1, fuse_c_logits_HMT_x_ulb_s_1 = outputs['fuse_logit_HMT_c_1'][num_lb:].chunk(2)
-                
+
                 fuse_c_logits_HMT_x_lb_2 = outputs['fuse_logit_HMT_c_2'][:num_lb]
                 fuse_c_logits_HMT_x_ulb_w_2, fuse_c_logits_HMT_x_ulb_s_2 = outputs['fuse_logit_HMT_c_2'][num_lb:].chunk(2)
-                
+
                 fuse_c_logits_HMT_x_lb_3 = outputs['fuse_logit_HMT_c_3'][:num_lb]
                 fuse_c_logits_HMT_x_ulb_w_3, fuse_c_logits_HMT_x_ulb_s_3 = outputs['fuse_logit_HMT_c_3'][num_lb:].chunk(2)
-                
+
                 fuse_logits_w_lb = outputs['fuse_w_logit'][:num_lb]
                 fuse_logits_w_ulb_w, fuse_logits_w_ulb_s = outputs['fuse_w_logit'][num_lb:].chunk(2)
             else:
                 pass
-            
+
             feat_dict = {}
 
             # First Head: FixMatch w/ tau1 * Logit Adjustment
@@ -330,7 +328,7 @@ class MetaExpert(ImbAlgorithmBase):
             unsup_loss3 += (self.ce_loss(logits_x_ulb_sM3, pseudo_label3, reduction='none') * pseudo_label3M).sum()
             unsup_loss3 += (self.ce_loss(logits_x_ulb_sT3, pseudo_label3, reduction='none') * pseudo_label3T).sum()
             unsup_loss3 /= (pseudo_label3H.sum() + pseudo_label3M.sum() + pseudo_label3T.sum() + 1e-12)
-            
+
             if self.epoch > self.est_epoch and self.epoch == self.current_epoch:
                 self.current_mask[pseudo_label2] += mask2.float()
 
@@ -348,7 +346,7 @@ class MetaExpert(ImbAlgorithmBase):
             unsup_fuse_loss1 = self.weight_kl[0] * F.cross_entropy(fuse_c_logits_HMT_x_ulb_s_1, fuse_pseudo_label11)
             unsup_fuse_loss1 += self.weight_kl[1] * F.cross_entropy(fuse_c_logits_HMT_x_ulb_s_2, fuse_pseudo_label12)
             unsup_fuse_loss1 += self.weight_kl[2] * F.cross_entropy(fuse_c_logits_HMT_x_ulb_s_3, fuse_pseudo_label13)
-            
+
             lb_w1 = torch.where(lb < self.cut1, torch.ones_like(lb), torch.zeros_like(lb))
             lb_w2 = torch.where((self.cut1 <= lb) & (lb < self.cut2), torch.ones_like(lb), torch.zeros_like(lb))
             lb_w3 = torch.where(self.cut2 <= lb, torch.ones_like(lb), torch.zeros_like(lb))
@@ -422,14 +420,6 @@ class MetaExpert(ImbAlgorithmBase):
                 logit3 = self.model(x)['aux_logits2']
 
                 w = torch.cat([w1, w2, w3], dim=1)
-
-                one_hot_w = torch.zeros_like(w)
-                argmax_indices = torch.max(w, dim=1)[1]
-                one_hot_w.scatter_(1, argmax_indices.unsqueeze(1), 1)
-                
-                one_hot_w1 = torch.zeros_like(w)
-                _, top_two = torch.topk(w, 2, dim=1)
-                one_hot_w1.scatter_(1, top_two, 1)
 
                 logits = w[:, 0].reshape(-1, 1) * logit1 + w[:, 1].reshape(-1, 1) * logit2 + w[:, 2].reshape(-1, 1) * logit3
 
