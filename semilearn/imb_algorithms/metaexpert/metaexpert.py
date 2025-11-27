@@ -1,4 +1,4 @@
-# Copyright (c) Microsoft Corporation.yonov19v23+v2.py
+# Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
 import torch
