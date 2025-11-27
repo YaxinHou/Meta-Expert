@@ -144,7 +144,6 @@ class WideResNet(nn.Module):
         logitsH, logitsM, logitsT = output.chunk(3)
         logits = (logitsH + logitsM + logitsT) / 3
 
-
         aux_output1 = self.aux_classifier1(out)
         aux_logitsH1, aux_logitsM1, aux_logitsT1 = aux_output1.chunk(3)
         aux_logits1 = (aux_logitsH1 + aux_logitsM1 + aux_logitsT1) / 3
@@ -199,7 +198,6 @@ def wrn_28_2_metaexpert(pretrained=False, pretrained_path=None, **kwargs):
         print('!'*100)
         model = load_checkpoint(model, pretrained_path)
     return model
-
 
 def wrn_28_8_metaexpert(pretrained=False, pretrained_path=None, **kwargs):
     model = WideResNet(first_stride=1, depth=28, widen_factor=8, **kwargs)
