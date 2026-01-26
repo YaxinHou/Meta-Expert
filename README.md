@@ -37,12 +37,12 @@ The reported accuracies in Table 3 and 4 in our paper are the average over three
 If you find our method useful, please consider citing our paper:
 
   ```
-  @inproceedings{metaexperticml2025,
-    title={A Square Peg in a Square Hole: Meta-Expert for Long-Tailed Semi-Supervised Learning},
-    author={Hou, Yaxin and Jia, Yuheng},
-    booktitle={International Conference on Machine Learning},
-    volume={},
-    pages={},
-    year={2025}
-  }
+@inproceedings{Meta-Expert,
+  author       = {Yaxin Hou and
+                  Yuheng Jia},
+  title        = {A Square Peg in a Square Hole: Meta-Expert for Long-Tailed Semi-Supervised
+                  Learning},
+  booktitle    = {International Conference on Machine Learning (ICML)},
+  year         = {2025}
+}
   ```
