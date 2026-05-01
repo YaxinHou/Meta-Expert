@@ -1,9 +1,11 @@
 # A Square Peg in a Square Hole: Meta-Expert for Long-Tailed Semi-Supervised Learning
+
 Yaxin Hou, Yuheng Jia, A Square Peg in a Square Hole: Meta-Expert for Long-Tailed Semi-Supervised Learning, International Conference on Machine Learning, 13th-19th July, Vancouver, 2025.
 
 This is an official [PyTorch](http://pytorch.org) implementation for **A Square Peg in a Square Hole: Meta-Expert for Long-Tailed Semi-Supervised Learning**.
 
 ## Introduction
+
 This code is based on the public and widely-used codebase [USB](https://github.com/microsoft/Semi-supervised-learning) and the previous method [CPE](https://github.com/machengcheng2016/CPE-LTSSL).
 
 What I've done is just adding our Meta-Expert algorithm in `semilearn/imb_algorithms/metaexpert`.
@@ -11,6 +13,7 @@ What I've done is just adding our Meta-Expert algorithm in `semilearn/imb_algori
 Also, I've made corresponding modifications to `semilearn/nets/` and several `__init__.py`.
 
 ## How to run
+
 For example, on CIFAR-10-LT with $\gamma_l=\gamma_u=150$
 
 ```
