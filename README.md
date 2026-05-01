@@ -38,13 +38,13 @@ If you find our method useful, please consider citing our paper:
 
   ```
   @inproceedings{Meta-Expert,
-    author       = {Yaxin Hou and
-                    Yuheng Jia},
-    title        = {A Square Peg in a Square Hole: Meta-Expert for Long-Tailed Semi-Supervised
-                    Learning},
-    booktitle    = {International Conference on Machine Learning (ICML)},
-    volume       = {267},
-    pages        = {23960--23975},
-    year         = {2025}
+    author     = {Yaxin Hou and
+                  Yuheng Jia},
+    title      = {A Square Peg in a Square Hole: Meta-Expert for Long-Tailed Semi-Supervised
+                  Learning},
+    booktitle  = {International Conference on Machine Learning (ICML)},
+    volume     = {267},
+    pages      = {23960--23975},
+    year       = {2025}
   }
   ```
